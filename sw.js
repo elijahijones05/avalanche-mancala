@@ -3,7 +3,7 @@
  * Bump CACHE_NAME whenever you ship a new version of the shell files.
  */
 
-const CACHE_NAME = 'avalanche-mancala-v1';
+const CACHE_NAME = 'avalanche-mancala-v2';
 
 const SHELL_FILES = [
   './',
