@@ -10,8 +10,8 @@ with plain HTML, CSS, and JavaScript — no frameworks, no build step.
 - **Avalanche rule**: landing your last stone in a non-empty pit scoops it up
   and keeps sowing, relay-style
 - Extra turn when your last stone lands in your own store
-- **GamePigeon-style capture**: landing your last stone in an *empty* pit on
-  your own side captures that stone plus everything in the opposite pit
+- Landing your last stone in an *empty* pit (yours or your opponent's) simply
+  ends your turn — the standard Avalanche rule has no capture mechanic
 - Automatic end-of-game sweep when one side runs out of stones
 - Smooth, step-by-step sowing animation (including the avalanche "tumble")
 - Responsive, mobile-first UI styled like a wooden game table
@@ -25,7 +25,7 @@ with plain HTML, CSS, and JavaScript — no frameworks, no build step.
 |-------------------|------------------------------------------------------------------|
 | `index.html`      | App markup / screens                                            |
 | `style.css`       | All styling, layout, and animations                             |
-| `game.js`         | Pure game rules engine (no DOM, no Firebase) — sowing, avalanche, captures, win detection |
+| `game.js`         | Pure game rules engine (no DOM, no Firebase) — sowing, avalanche, win detection |
 | `app.js`          | UI controller: rendering, animation playback, screen flow, wires game.js + multiplayer.js to the DOM |
 | `firebase.js`     | Firebase app/Firestore initialization (config placeholders live here) |
 | `multiplayer.js`  | Room creation/joining, realtime listeners, move transactions, rematch, reconnect |
@@ -133,8 +133,9 @@ will sync in real time.
   (yours or your opponent's), that whole pit gets picked up and sowing
   continues — this is the avalanche.
 - If your last stone lands in your own **store**, you get another turn.
-- If your last stone lands in an **empty pit on your own side**, and the
-  pit directly opposite has stones, you capture both into your store.
+- If your last stone lands in an **empty pit** — yours or your opponent's —
+  your turn simply ends there. No marbles move; the standard Avalanche rule
+  has no capture mechanic.
 - Otherwise, the turn simply passes.
 - When one player has no stones left on their side, the game ends and
   the other player sweeps all their remaining stones into their store.

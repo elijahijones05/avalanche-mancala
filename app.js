@@ -307,19 +307,6 @@ async function animateTrace(boardBeforeMove, trace) {
       store && store.classList.add('store-fill-flash');
       await delay(600);
       store && store.classList.remove('store-fill-flash');
-    } else if (step.type === 'capture') {
-      const pitEl1 = pitElementFor(step.pit);
-      const pitEl2 = pitElementFor(step.opposite);
-      pitEl1 && pitEl1.classList.add('capture-flash');
-      pitEl2 && pitEl2.classList.add('capture-flash');
-      await delay(450);
-      working[step.pit] = 0;
-      working[step.opposite] = 0;
-      working[step.store] += step.gained;
-      renderWorking(working);
-      await delay(400);
-      pitEl1 && pitEl1.classList.remove('capture-flash');
-      pitEl2 && pitEl2.classList.remove('capture-flash');
     }
   }
 
@@ -384,9 +371,7 @@ async function playLocalMove(player, index) {
 
   renderBoard();
 
-  if (result.capture) {
-    setStatusLine(`${player === 1 ? state.names.p1 : state.names.p2} captured ${result.capture.gained} stones!`);
-  } else if (result.extraTurn) {
+  if (result.extraTurn) {
     setStatusLine(`${player === 1 ? state.names.p1 : state.names.p2} lands in the store — go again!`);
   } else {
     setStatusLine('');

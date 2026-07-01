@@ -68,16 +68,15 @@ export function hasAnyMoves(board, player) {
 }
 
 /**
- * Simulates a full move, including avalanche relay sowing and captures.
- * Returns a new board plus a trace of atomic steps for animation, and
- * metadata about the result of the move.
+ * Simulates a full move, including avalanche relay sowing. Landing the
+ * final stone in an empty pit (yours or the opponent's) simply ends the
+ * turn — standard Avalanche rules have no capture mechanic.
  *
  * trace step types:
  *   { type: 'pickup',    index, count }               - stones lifted from starting pit
  *   { type: 'sow',       index }                       - one stone dropped in `index`
  *   { type: 'avalanche', index, count }                - stones re-lifted from `index` (relay continues)
  *   { type: 'store',     index }                       - final stone landed in a store (turn ends / extra turn)
- *   { type: 'capture',   pit, opposite, store, gained } - capture resolved
  */
 export function simulateMove(board, player, pitIndex) {
   if (!isValidMove(board, player, pitIndex)) {
@@ -93,7 +92,6 @@ export function simulateMove(board, player, pitIndex) {
 
   let index = pitIndex;
   let extraTurn = false;
-  let capture = null;
 
   const SAFETY_LIMIT = 500; // guards against unforeseen infinite relay loops
   let iterations = 0;
@@ -122,19 +120,9 @@ export function simulateMove(board, player, pitIndex) {
 
     if (newBoard[index] === 1) {
       // Landed in a pit that was empty before this stone.
-      if (isOwnPit(index, player)) {
-        const opp = oppositeIndex(index);
-        if (newBoard[opp] > 0) {
-          const store = ownStore(player);
-          const gained = newBoard[index] + newBoard[opp];
-          newBoard[store] += gained;
-          newBoard[index] = 0;
-          newBoard[opp] = 0;
-          capture = { pit: index, opposite: opp, store, gained };
-          trace.push({ type: 'capture', pit: index, opposite: opp, store, gained });
-        }
-      }
-      break; // empty-landing always ends the move (capture or not)
+      // Standard Avalanche rule: no capture — the turn simply ends here,
+      // and the single stone just placed stays in the pit.
+      break;
     } else {
       // Avalanche: pit had stones already -> pick them all up and keep sowing.
       stones = newBoard[index];
@@ -182,7 +170,6 @@ export function simulateMove(board, player, pitIndex) {
     board: newBoard,
     trace,
     extraTurn,
-    capture,
     gameOver,
     winner,
     sweep,
