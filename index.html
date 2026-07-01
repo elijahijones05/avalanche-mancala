@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>Avalanche &mdash; Mancala</title>
+<meta name="description" content="A GamePigeon-style Avalanche Mancala game. Play locally or challenge a friend online with a room code." />
+<meta name="theme-color" content="#163832" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="table-surface">
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40" width="30" height="30">
+          <circle cx="20" cy="20" r="18" fill="var(--stone-cream)" />
+          <circle cx="14" cy="15" r="4" fill="var(--wood-dark)" opacity="0.35" />
+          <circle cx="26" cy="24" r="3" fill="var(--wood-dark)" opacity="0.25" />
+        </svg>
+      </span>
+      <h1>Avalanche</h1>
+    </div>
+    <button id="btn-menu" class="icon-btn" title="Back to menu" aria-label="Back to menu" hidden>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+    </button>
+  </header>
+
+  <main id="app">
+
+    <!-- ============ MODE SELECT ============ -->
+    <section id="screen-mode" class="screen active">
+      <p class="tagline">Sow the stones. Trigger an avalanche. Sweep the board.</p>
+
+      <div class="menu-card">
+        <button class="btn btn-primary btn-large" id="btn-play-local">
+          Play Locally
+          <span class="btn-sub">Pass and play, one device</span>
+        </button>
+        <button class="btn btn-secondary btn-large" id="btn-play-online">
+          Play Online
+          <span class="btn-sub">Room-code multiplayer</span>
+        </button>
+      </div>
+
+      <details class="rules-disclosure">
+        <summary>How Avalanche Mancala works</summary>
+        <ul>
+          <li>Pick a pit on your side. Its stones drop one-by-one into each following pit, moving counter-clockwise.</li>
+          <li>If your last stone lands in a pit that already has stones, scoop up the whole pit and keep sowing &mdash; that's the avalanche.</li>
+          <li>Land your last stone in your own store to go again.</li>
+          <li>Land your last stone in an empty pit on your side, and the opposite pit has stones? Capture both into your store.</li>
+          <li>When one side runs out of pits to play, the game ends and the other player sweeps their remaining stones home.</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- ============ ONLINE SETUP ============ -->
+    <section id="screen-online-setup" class="screen">
+      <h2 class="screen-title">Play Online</h2>
+      <p id="firebase-warning" class="warning-banner" hidden></p>
+
+      <div class="panel">
+        <h3>Create a room</h3>
+        <label class="field">
+          <span>Your name</span>
+          <input type="text" id="input-name-create" maxlength="18" placeholder="Player 1" />
+        </label>
+        <button class="btn btn-primary" id="btn-create-room">Create Room</button>
+      </div>
+
+      <div class="divider"><span>or</span></div>
+
+      <div class="panel">
+        <h3>Join a room</h3>
+        <label class="field">
+          <span>Your name</span>
+          <input type="text" id="input-name-join" maxlength="18" placeholder="Player 2" />
+        </label>
+        <label class="field">
+          <span>Room code</span>
+          <input type="text" id="input-room-code" maxlength="6" placeholder="ABCDE" autocapitalize="characters" />
+        </label>
+        <button class="btn btn-secondary" id="btn-join-room">Join Room</button>
+      </div>
+
+      <p class="error-text" id="online-setup-error" role="alert"></p>
+    </section>
+
+    <!-- ============ WAITING ROOM ============ -->
+    <section id="screen-waiting" class="screen">
+      <h2 class="screen-title">Waiting for opponent&hellip;</h2>
+      <div class="room-code-display">
+        <span class="room-code-label">Room code</span>
+        <span class="room-code-value" id="waiting-room-code">-----</span>
+        <button class="btn btn-ghost btn-small" id="btn-copy-code">Copy</button>
+      </div>
+      <p class="hint-text">Share this code with a friend. The game starts automatically once they join.</p>
+      <div class="spinner" aria-hidden="true"></div>
+      <button class="btn btn-ghost" id="btn-cancel-waiting">Cancel</button>
+    </section>
+
+    <!-- ============ GAME ============ -->
+    <section id="screen-game" class="screen">
+
+      <div class="scoreboard">
+        <div class="score-chip" id="chip-p1">
+          <span class="score-name" id="name-p1">Player 1</span>
+          <span class="score-value" id="score-p1">0</span>
+        </div>
+        <div class="turn-indicator" id="turn-indicator">
+          <span id="turn-text">Player 1's turn</span>
+        </div>
+        <div class="score-chip" id="chip-p2">
+          <span class="score-name" id="name-p2">Player 2</span>
+          <span class="score-value" id="score-p2">0</span>
+        </div>
+      </div>
+
+      <p class="room-tag" id="room-tag" hidden>Room <strong id="room-tag-code"></strong> &middot; <span id="connection-status">connected</span></p>
+
+      <div class="board-wrap">
+        <div class="board" id="board">
+          <!-- store P2 (left) -->
+          <div class="store store-p2" id="store-13" data-index="13">
+            <div class="store-label">P2 Store</div>
+            <div class="stones-well" id="stones-13"></div>
+            <div class="store-count" id="count-13">0</div>
+          </div>
+
+          <!-- top row: pits 12,11,10,9,8,7 -->
+          <div class="pit-row pit-row-top" id="row-top"></div>
+
+          <!-- bottom row: pits 0,1,2,3,4,5 -->
+          <div class="pit-row pit-row-bottom" id="row-bottom"></div>
+
+          <!-- store P1 (right) -->
+          <div class="store store-p1" id="store-6" data-index="6">
+            <div class="store-label">P1 Store</div>
+            <div class="stones-well" id="stones-6"></div>
+            <div class="store-count" id="count-6">0</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="status-line" id="status-line" aria-live="polite">&nbsp;</p>
+
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <span>Avalanche Mancala &middot; built with vanilla JS</span>
+  </footer>
+</div>
+
+<!-- ============ GAME OVER MODAL ============ -->
+<div class="modal-backdrop" id="modal-gameover" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
+    <h2 id="gameover-title">Game Over</h2>
+    <p id="gameover-message">&nbsp;</p>
+    <div class="final-scores">
+      <div><span id="final-name-p1">Player 1</span>: <strong id="final-score-p1">0</strong></div>
+      <div><span id="final-name-p2">Player 2</span>: <strong id="final-score-p2">0</strong></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btn-rematch">Rematch</button>
+      <button class="btn btn-ghost" id="btn-back-to-menu">Back to Menu</button>
+    </div>
+    <p class="hint-text" id="rematch-status"></p>
+  </div>
+</div>
+
+<!-- ============ TOAST ============ -->
+<div class="toast" id="toast" hidden></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
