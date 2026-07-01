@@ -685,13 +685,36 @@ el.inputRoomCode.addEventListener('input', () => {
 /* Boot                                                                  */
 /* ------------------------------------------------------------------ */
 
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+
+  // When a newly-installed service worker takes control of this page
+  // (which happens automatically thanks to skipWaiting()/clients.claim()
+  // in sw.js), reload once so the page picks up the fresh files instead
+  // of continuing to run on stale cached JS. The `refreshed` guard stops
+  // this from looping if controllerchange fires more than once.
+  let refreshed = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshed) return;
+    refreshed = true;
+    window.location.reload();
+  });
+
+  navigator.serviceWorker
+    .register('sw.js')
+    .then((registration) => {
+      // Nudge the browser to check for a new sw.js right away, rather
+      // than waiting for its own periodic check.
+      registration.update().catch(() => {});
+    })
+    .catch((err) => console.warn('SW registration failed:', err));
+}
+
 async function boot() {
   buildBoardSkeleton();
   checkFirebaseAvailability();
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch((err) => console.warn('SW registration failed:', err));
-  }
+  registerServiceWorker();
 
   const resumed = await attemptReconnect();
   if (!resumed) {
